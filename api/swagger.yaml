@@ -1,0 +1,821 @@
+openapi: 3.0.0
+info:
+  title: Personal Finance Manager API
+  description: API documentation for the Personal Finance Manager application
+  version: 1.0.0
+  contact:
+    name: Backend Team
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [income, expense, transfer]
+        icon:
+          type: string
+        color:
+          type: string
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        plaid_account_id:
+          type: string
+          nullable: true
+        name:
+          type: string
+        type:
+          type: string
+        balance:
+          type: number
+          format: double
+        currency:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+        amount:
+          type: number
+          format: double
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [income, expense, transfer]
+        status:
+          type: string
+          enum: [pending, completed, cancelled]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Budget:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+        spent:
+          type: number
+          format: double
+        period:
+          type: string
+          enum: [monthly, quarterly, yearly]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RecurringTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+        description:
+          type: string
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        last_executed:
+          type: string
+          format: date-time
+        next_execution:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [low_balance, bill_due, budget_exceeded, unusual_activity]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        message:
+          type: string
+        read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    NotificationPreferences:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        email_notifications:
+          type: boolean
+        push_notifications:
+          type: boolean
+        notification_types:
+          type: array
+          items:
+            type: string
+            enum: [low_balance, bill_due, budget_exceeded, unusual_activity]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+paths:
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - first_name
+                - last_name
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+      responses:
+        '201':
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/login:
+    post:
+      summary: Login user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/categories:
+    get:
+      summary: Get all categories
+      tags: [Categories]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+    post:
+      summary: Create a new category
+      tags: [Categories]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - type
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: [income, expense, transfer]
+                icon:
+                  type: string
+                color:
+                  type: string
+                parent_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+
+  /api/accounts:
+    get:
+      summary: Get user accounts
+      tags: [Accounts]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+    post:
+      summary: Create a new account
+      tags: [Accounts]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - type
+                - currency
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                currency:
+                  type: string
+                plaid_account_id:
+                  type: string
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+
+  /api/transactions:
+    get:
+      summary: Get user transactions
+      tags: [Transactions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: category_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: account_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [income, expense, transfer]
+      responses:
+        '200':
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+    post:
+      summary: Create a new transaction
+      tags: [Transactions]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - account_id
+                - amount
+                - description
+                - date
+                - type
+              properties:
+                account_id:
+                  type: string
+                  format: uuid
+                category_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  format: double
+                description:
+                  type: string
+                date:
+                  type: string
+                  format: date-time
+                type:
+                  type: string
+                  enum: [income, expense, transfer]
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+
+  /api/budgets:
+    get:
+      summary: Get user budgets
+      tags: [Budgets]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of budgets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Budget'
+    post:
+      summary: Create a new budget
+      tags: [Budgets]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - category_id
+                - amount
+                - period
+              properties:
+                category_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  format: double
+                period:
+                  type: string
+                  enum: [monthly, quarterly, yearly]
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Budget created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+
+  /api/analytics/spending:
+    get:
+      summary: Get spending analytics
+      tags: [Analytics]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: group_by
+          schema:
+            type: string
+            enum: [category, day, week, month]
+      responses:
+        '200':
+          description: Spending analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_spending:
+                    type: number
+                  breakdown:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        group:
+                          type: string
+                        amount:
+                          type: number
+
+  /api/analytics/income:
+    get:
+      summary: Get income analytics
+      tags: [Analytics]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: group_by
+          schema:
+            type: string
+            enum: [category, day, week, month]
+      responses:
+        '200':
+          description: Income analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_income:
+                    type: number
+                  breakdown:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        group:
+                          type: string
+                        amount:
+                          type: number
+
+  /api/recurring:
+    get:
+      summary: Get recurring transactions
+      tags: [Recurring Transactions]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of recurring transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecurringTransaction'
+    post:
+      summary: Create a recurring transaction
+      tags: [Recurring Transactions]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - account_id
+                - amount
+                - description
+                - frequency
+                - start_date
+              properties:
+                account_id:
+                  type: string
+                  format: uuid
+                category_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  format: double
+                description:
+                  type: string
+                frequency:
+                  type: string
+                  enum: [daily, weekly, monthly, yearly]
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Recurring transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+
+  /api/metrics:
+    get:
+      summary: Get financial metrics
+      tags: [Metrics]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [net_worth, savings_rate, debt_to_income, expense_ratio]
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [1m, 3m, 6m, 1y, all]
+      responses:
+        '200':
+          description: Financial metrics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metric_type:
+                    type: string
+                  current_value:
+                    type: number
+                  historical_values:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        value:
+                          type: number
+
+  /api/notifications:
+    get:
+      summary: Get user notifications
+      tags: [Notifications]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: unread_only
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  /api/notifications/preferences:
+    get:
+      summary: Get notification preferences
+      tags: [Notifications]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User's notification preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+    put:
+      summary: Update notification preferences
+      tags: [Notifications]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email_notifications:
+                  type: boolean
+                push_notifications:
+                  type: boolean
+                notification_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [low_balance, bill_due, budget_exceeded, unusual_activity]
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'

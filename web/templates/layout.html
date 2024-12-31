@@ -1,0 +1,126 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{template "page-title" .}} - Personal Finance Manager</title>
+    
+    <!-- Core Dependencies -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Application Scripts -->
+    {{if not (or (eq .Page "login") (eq .Page "register"))}}
+    <script src="/static/js/auth.js"></script>
+    {{end}}
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/utils.js"></script>
+    
+    <!-- Page-specific Scripts -->
+    {{if eq .Page "accounts"}}
+    <script src="/static/js/accounts.js"></script>
+    {{else if eq .Page "transactions"}}
+    <script src="/static/js/transactions.js"></script>
+    {{else if eq .Page "dashboard"}}
+    <script src="/static/js/dashboard.js"></script>
+    {{else if eq .Page "analytics"}}
+    <script src="/static/js/analytics.js"></script>
+    {{else if eq .Page "budgets"}}
+    <script src="/static/js/budgets.js"></script>
+    {{end}}
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="h-full">
+    <div class="min-h-full">
+        {{if not (or (eq .Page "login") (eq .Page "register"))}}
+        <nav class="bg-white shadow">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 justify-between">
+                    <div class="flex">
+                        <div class="flex flex-shrink-0 items-center">
+                            <a href="/" class="text-xl font-bold text-primary-600">PFM</a>
+                        </div>
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="/" class="inline-flex items-center border-b-2 {{if eq .Page "dashboard"}}border-primary-500 text-gray-900{{else}}border-transparent text-gray-500 hover:border-primary-500 hover:text-gray-700{{end}} px-1 pt-1 text-sm font-medium">Dashboard</a>
+                            <a href="/accounts" class="inline-flex items-center border-b-2 {{if eq .Page "accounts"}}border-primary-500 text-gray-900{{else}}border-transparent text-gray-500 hover:border-primary-500 hover:text-gray-700{{end}} px-1 pt-1 text-sm font-medium">Accounts</a>
+                            <a href="/transactions" class="inline-flex items-center border-b-2 {{if eq .Page "transactions"}}border-primary-500 text-gray-900{{else}}border-transparent text-gray-500 hover:border-primary-500 hover:text-gray-700{{end}} px-1 pt-1 text-sm font-medium">Transactions</a>
+                            <a href="/budgets" class="inline-flex items-center border-b-2 {{if eq .Page "budgets"}}border-primary-500 text-gray-900{{else}}border-transparent text-gray-500 hover:border-primary-500 hover:text-gray-700{{end}} px-1 pt-1 text-sm font-medium">Budgets</a>
+                            <a href="/analytics" class="inline-flex items-center border-b-2 {{if eq .Page "analytics"}}border-primary-500 text-gray-900{{else}}border-transparent text-gray-500 hover:border-primary-500 hover:text-gray-700{{end}} px-1 pt-1 text-sm font-medium">Analytics</a>
+                        </div>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                        <button type="button" onclick="logout()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        {{end}}
+
+        <div class="py-10">
+            <main>
+                <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    {{if eq .Page "dashboard"}}
+                        {{template "dashboard-content" .}}
+                    {{else if eq .Page "accounts"}}
+                        {{template "accounts-content" .}}
+                    {{else if eq .Page "transactions"}}
+                        {{template "transactions-content" .}}
+                    {{else if eq .Page "login"}}
+                        {{template "login-content" .}}
+                    {{else if eq .Page "register"}}
+                        {{template "register-content" .}}
+                    {{else if eq .Page "analytics"}}
+                        {{template "analytics-content" .}}
+                    {{else if eq .Page "budgets"}}
+                        {{template "budgets-content" .}}
+                    {{end}}
+                </div>
+            </main>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast-container" class="fixed bottom-4 right-4 z-50"></div>
+
+        <script>
+            function showToast(message, type = 'success') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `mb-4 p-4 rounded-md ${type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`;
+                toast.textContent = message;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        </script>
+    </div>
+</body>
+</html>
+{{end}}

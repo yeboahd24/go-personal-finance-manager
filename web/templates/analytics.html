@@ -1,0 +1,44 @@
+{{define "page-title"}}Analytics{{end}}
+
+{{define "analytics-content"}}
+<div class="bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+        <h2 class="text-2xl font-semibold mb-6">Financial Analytics</h2>
+        
+        <!-- Spending Overview -->
+        <div class="mb-8">
+            <h3 class="text-lg font-medium mb-4">Spending Overview</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <canvas id="spendingChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div class="mb-8">
+            <h3 class="text-lg font-medium mb-4">Category Breakdown</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <canvas id="categoryChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+
+        <!-- Monthly Comparison -->
+        <div class="mb-8">
+            <h3 class="text-lg font-medium mb-4">Monthly Comparison</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <canvas id="monthlyChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+
+        <!-- Income vs Expenses -->
+        <div>
+            <h3 class="text-lg font-medium mb-4">Income vs Expenses</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <canvas id="incomeExpenseChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{end}}
